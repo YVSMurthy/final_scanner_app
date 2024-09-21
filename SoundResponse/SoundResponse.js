@@ -1,29 +1,21 @@
-import Sound from 'react-native-sound';
+import TrackPlayer from 'react-native-track-player';
 
-const playAudio = (verify) => {
+const playAudio = async (verify) => {
   // Load the correct audio based on the verify value
   const soundFile = verify ? require('./correct.mp3') : require('./invalid.mp3');
 
 
   console.log(verify ? 'valid' : 'invalid')
-  const sound = new Sound(soundFile, Sound.MAIN_BUNDLE, (error) => {
-    if (error) {
-      console.error('Failed to load sound', error);
-      return;
-    }
-    // Play the sound
-    sound.setVolume(1);
-    sound.play((success) => {
-      if (!success) {
-        console.error('Sound playback failed');
-      }
-    });
-  });
+  await TrackPlayer.setupPlayer();
 
-  // Cleanup function to release the sound
-  return () => {
-    sound.release();
-  };
-};
+  // Add a track to the queue
+    await TrackPlayer.add({
+        id: 'trackId',
+        url: require('track.mp3'),
+        title: 'Track Title',
+        artist: 'Track Artist',
+        artwork: require('track.png')
+  })
+}
 
 module.exports = {playAudio: playAudio}

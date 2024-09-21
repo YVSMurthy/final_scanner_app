@@ -1201,6 +1201,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@questmate/react-native-track-player@^4.1.4":
+  version "4.1.4"
+  resolved "https://registry.npmjs.org/@questmate/react-native-track-player/-/react-native-track-player-4.1.4.tgz"
+  integrity sha512-HYYt/bP6rfc9lfnC5YGydUSYi84TeFjArNoFvqSX7ZAxGtjRuNaxxsA0Z/vQGBhQvGhHLbLK9t0U2gZTpxgE9g==
+
 "@react-native-community/cli-clean@14.1.0":
   version "14.1.0"
   dependencies:
@@ -2020,7 +2025,7 @@ bser@2.1.1:
 buffer-from@^1.0.0:
   version "1.1.2"
 
-buffer@^5.5.0:
+buffer@^5.4.3, buffer@^5.5.0:
   version "5.7.1"
   dependencies:
     base64-js "^1.3.1"
@@ -2678,6 +2683,11 @@ etag@~1.8.1:
 
 event-target-shim@^5.0.0, event-target-shim@^5.0.1:
   version "5.0.1"
+
+eventemitter3@^4.0.7:
+  version "4.0.7"
+  resolved "https://registry.npmjs.org/eventemitter3/-/eventemitter3-4.0.7.tgz"
+  integrity sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==
 
 execa@^5.0.0, execa@^5.1.1:
   version "5.1.1"
@@ -4362,7 +4372,15 @@ react-native-sound@^0.11.2:
   resolved "https://registry.npmjs.org/react-native-sound/-/react-native-sound-0.11.2.tgz"
   integrity sha512-LmGc8lgOK3qecYMVQpyHvww/C+wgT6sWeMpVbOe4NCRGC2yKd4fo4U0KBUo9PO7AqKESO3I/2GZg1/C0+bwiiA==
 
-react-native@*, react-native@>=0.8.0, react-native@0.75.3:
+react-native-tcp-socket@^6.2.0:
+  version "6.2.0"
+  resolved "https://registry.npmjs.org/react-native-tcp-socket/-/react-native-tcp-socket-6.2.0.tgz"
+  integrity sha512-q1FSK3cdwyFP3eNxgk+Z6Dgnb84RoAFKaDOIrt2gjG8YbLUad+StGhdd7BUdufNw1bS7JY7IAAgnwwvee3z08Q==
+  dependencies:
+    buffer "^5.4.3"
+    eventemitter3 "^4.0.7"
+
+react-native@*, react-native@>=0.60.0, react-native@>=0.60.0-rc.2, react-native@>=0.8.0, react-native@0.75.3:
   version "0.75.3"
   dependencies:
     "@jest/create-cache-key-function" "^29.6.3"
@@ -4421,7 +4439,7 @@ react-test-renderer@18.3.1:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.23.2"
 
-react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@^18.3.1, react@18.3.1:
+react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@^18.3.1, react@>=16.8.6, react@18.3.1:
   version "18.3.1"
   dependencies:
     loose-envify "^1.1.0"

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import NfcManager, { NfcTech, NfcEvents, Ndef } from 'react-native-nfc-manager';
-import { socket } from '../socket/socket';
+// import { socket } from '../socket/socket';
+import {io} from 'socket.io-client'
 const {decryptMessage} = require('../RSA/RSA')
 const {playAudio} = require('../SoundResponse/SoundResponse')
 
@@ -18,15 +19,13 @@ function Scanner() {
   const [tag, setTag] = useState<string|undefined>("");
   const [scan, setScan] = useState<boolean>(false);
   const [cart, setCart] = useState<CartItem[]>([{product_id: '13', verification_hash: '34'}]);
+  const [ws, setWs] = useState<WebSocket>(new WebSocket("ws://192.168.28.149:8080"));
+  const [message, setMessage] = useState<string>('');
 
   useEffect(() => {
-    if (!socket.connected) {
-      console.log("Not connected to the server");
-    }
-    else {
-      socket.on('item_scanned', (current_cart: CartItem[]) => {
-        setCart(current_cart);
-      })
+    ws.onmessage = (event) => {
+      console.log(event)
+      setMessage(event.data);
     }
   }, [])
 
@@ -92,9 +91,12 @@ function Scanner() {
             setTag(message.id)
             if (verifyItem(message.product_id) == true) {
               console.log("present")
-              playAudio(true)
+              // playAudio(true)
             }
-            else playAudio(false)
+            else {
+              console.log("not present")
+            }
+            // else playAudio(false)
             setTag("");
           }
 
