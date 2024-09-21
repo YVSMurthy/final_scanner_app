@@ -2,13 +2,17 @@ import Sound from 'react-native-sound';
 
 const playAudio = (verify) => {
   // Load the correct audio based on the verify value
-  const soundFile = !verify ? 'correct.mp3' : 'invalid.mp3';
+  const soundFile = verify ? require('./correct.mp3') : require('./invalid.mp3');
+
+
+  console.log(verify ? 'valid' : 'invalid')
   const sound = new Sound(soundFile, Sound.MAIN_BUNDLE, (error) => {
     if (error) {
       console.error('Failed to load sound', error);
       return;
     }
     // Play the sound
+    sound.setVolume(1);
     sound.play((success) => {
       if (!success) {
         console.error('Sound playback failed');
@@ -21,3 +25,5 @@ const playAudio = (verify) => {
     sound.release();
   };
 };
+
+module.exports = {playAudio: playAudio}

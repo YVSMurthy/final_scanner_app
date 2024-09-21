@@ -6,8 +6,8 @@ const {decryptMessage} = require('../RSA/RSA')
 const {playAudio} = require('../SoundResponse/SoundResponse')
 
 interface CartItem {
-  id: string,
-  hash: string
+  product_id: string,
+  verification_hash: string
 }
 
 NfcManager.start();
@@ -17,8 +17,7 @@ function Scanner() {
   const [nfcEnabled, setNfcEnabled] = useState<boolean>(false);
   const [tag, setTag] = useState<string|undefined>("");
   const [scan, setScan] = useState<boolean>(false);
-  const [cart, setCart] = useState<CartItem[]>([{id: '13', hash: '34'}]);
-  const [buzzer, setBuzzer] = useState<boolean>(false);
+  const [cart, setCart] = useState<CartItem[]>([{product_id: '13', verification_hash: '34'}]);
 
   useEffect(() => {
     if (!socket.connected) {
@@ -91,8 +90,11 @@ function Scanner() {
             messageString = messageString.slice(3,messageString.length); 
             const message = JSON.parse(messageString);
             setTag(message.id)
-            setBuzzer(true);
-            verifyItem(message.product_id);
+            if (verifyItem(message.product_id) == true) {
+              console.log("present")
+              playAudio(true)
+            }
+            else playAudio(false)
             setTag("");
           }
 
@@ -112,27 +114,23 @@ function Scanner() {
     let present = false;
     console.log(product_id)
     cart.forEach((item) => {
-      console.log(product_id + " " + item.id)
-      if (item.id == product_id) {
+      console.log(product_id + " " + item.product_id)
+      if (item.product_id.toString() == product_id.toString()) {
         // const encryptedMessage = product_id+item.hash;
-
+        console.log('equal')
         // const decryptedMessage = decryptMessage(encryptedMessage);
 
         // if (decryptedMessage.slice(-20) == '00000000000000000000') {
         //   setBuzzer(false);
         // }
 
-        setBuzzer(false);
-        present = true;
+        // setCart((prevCart) => prevCart.filter(matched => matched.product_id != product_id ));
 
-        setCart((prevCart) => prevCart.filter(matched => matched.id != product_id ));
-
-        return;
+        present = true
       }
     })
 
-    // playAudio(buzzer)
-    console.log("Present " + present)
+    return present;
   }
 
   function stopScan() {
