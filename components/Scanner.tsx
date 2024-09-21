@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import NfcManager, { NfcTech, NfcEvents, Ndef } from 'react-native-nfc-manager';
 import { socket } from '../socket/socket';
-const {encryptMessage, decryptMessage} = require('../RSA/RSA')
+const {decryptMessage} = require('../RSA/RSA')
+const {playAudio} = require('../SoundResponse/SoundResponse')
 
 interface CartItem {
   id: string,
@@ -14,9 +15,9 @@ NfcManager.start();
 function Scanner() {
   const [nfcSupported, setNfcSupported] = useState<boolean>(false);
   const [nfcEnabled, setNfcEnabled] = useState<boolean>(false);
-  const [tag, setTag] = useState<string|null>(null);
+  const [tag, setTag] = useState<string|undefined>("");
   const [scan, setScan] = useState<boolean>(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([{id: '13', hash: '34'}]);
   const [buzzer, setBuzzer] = useState<boolean>(false);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ function Scanner() {
   useEffect(() => {
     setTag("");
   }, [])
+
   useEffect(() => {
     checkNfcSupport();
 
@@ -46,9 +48,12 @@ function Scanner() {
     NfcManager.setEventListener(NfcEvents.StateChanged, handleStateChange);
 
     return () => {
-      // Clean up event listeners
+      // Clean up the NFC state change event listener
       NfcManager.setEventListener(NfcEvents.StateChanged, null);
     };
+    
+    
+    
   }, []);
 
   const checkNfcSupport = async () => {
@@ -63,6 +68,7 @@ function Scanner() {
     }
   };
 
+
   async function readNdef() {
     setScan(true)
     if (!nfcEnabled) {
@@ -74,39 +80,50 @@ function Scanner() {
         while (scan == true) {
           // Request NFC technology
           await NfcManager.requestTechnology(NfcTech.Ndef);
-          const tag = await NfcManager.getTag();
+          const tagDetails = await NfcManager.getTag();
           await NfcManager.cancelTechnologyRequest();
           
           // if tag detected
-          if (tag) {
-            verifyItem(tag.id);
-            setTag(null);
+          if (tagDetails) {
+            const firstRecord = tagDetails.ndefMessage[0];
+            const byteArray = firstRecord.payload;
+            let messageString = String.fromCharCode(...byteArray);
+            messageString = messageString.slice(3,messageString.length); 
+            const message = JSON.parse(messageString);
+            setTag(message.id)
+            setBuzzer(true);
+            verifyItem(message.product_id);
+            setTag("");
           }
 
         }
-        console.log("exited")
         
     } catch (ex: any) {
-      console.warn('Oops!', ex);
-      Alert.alert('Error reading NFC tag', ex.message);
+      // console.warn('Oops!', ex);
+      // Alert.alert('Error reading NFC tag', ex.message);
+      console.log("scan closed, click again to start")
     }
     finally {
       await NfcManager.cancelTechnologyRequest();
-      setTag("No tag")
     }
   }
 
-  function verifyItem(product_id: string|undefined) {
-    setBuzzer(true);
+  function verifyItem(product_id: string) {
+    let present = false;
+    console.log(product_id)
     cart.forEach((item) => {
+      console.log(product_id + " " + item.id)
       if (item.id == product_id) {
-        const encryptedMessage = product_id+item.hash;
+        // const encryptedMessage = product_id+item.hash;
 
-        const decryptedMessage = decryptMessage(encryptedMessage);
+        // const decryptedMessage = decryptMessage(encryptedMessage);
 
-        if (decryptedMessage.slice(-20) == '00000000000000000000') {
-          setBuzzer(false);
-        }
+        // if (decryptedMessage.slice(-20) == '00000000000000000000') {
+        //   setBuzzer(false);
+        // }
+
+        setBuzzer(false);
+        present = true;
 
         setCart((prevCart) => prevCart.filter(matched => matched.id != product_id ));
 
@@ -114,9 +131,8 @@ function Scanner() {
       }
     })
 
-    if (buzzer) {
-      console.log("Ring the alarm");
-    }
+    // playAudio(buzzer)
+    console.log("Present " + present)
   }
 
   function stopScan() {
