@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import NfcManager, { NfcTech, NfcEvents, Ndef } from 'react-native-nfc-manager';
-// import { socket } from '../socket/socket';
-import {io} from 'socket.io-client'
-const {decryptMessage} = require('../RSA/RSA')
-const {playAudio} = require('../SoundResponse/SoundResponse')
+import TcpSocket from 'react-native-tcp-socket';
+const { decryptMessage } = require('../RSA/RSA')
+const { playAudio } = require('../SoundResponse/SoundResponse')
 
 interface CartItem {
   product_id: string,
   verification_hash: string
+}
+
+interface Message {
+  key: string;
 }
 
 NfcManager.start();
@@ -16,18 +19,35 @@ NfcManager.start();
 function Scanner() {
   const [nfcSupported, setNfcSupported] = useState<boolean>(false);
   const [nfcEnabled, setNfcEnabled] = useState<boolean>(false);
-  const [tag, setTag] = useState<string|undefined>("");
+  const [tag, setTag] = useState<string | undefined>("");
   const [scan, setScan] = useState<boolean>(false);
-  const [cart, setCart] = useState<CartItem[]>([{product_id: '13', verification_hash: '34'}]);
-  const [ws, setWs] = useState<WebSocket>(new WebSocket("ws://192.168.28.149:8080"));
-  const [message, setMessage] = useState<string>('');
+  const [cart, setCart] = useState<CartItem[]>([{"product_id": "12", "verification_hash": "34"}]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [client, setClient] = useState<TcpSocket.Socket | null>(null);
 
   useEffect(() => {
-    ws.onmessage = (event) => {
-      console.log(event)
-      setMessage(event.data);
-    }
-  }, [])
+    const tcpClient = TcpSocket.createConnection({ port: 8080, host: '192.168.28.149' }, () => {
+      console.log('Connected to server');
+    });
+
+    tcpClient.on('data', (data) => {
+      console.log(data.toString())
+      const curr_cart: any[] = JSON.parse(data);
+      console.log('Received from server: ', curr_cart);
+      console.log(typeof curr_cart); // Should be 'object' for an array
+
+      // Use functional state update to ensure correct updates
+      setCart(curr_cart);
+    });
+
+    // Set the client to state
+    setClient(tcpClient);
+
+    // Cleanup on unmount
+    return () => {
+      tcpClient.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     setTag("");
@@ -49,9 +69,9 @@ function Scanner() {
       // Clean up the NFC state change event listener
       NfcManager.setEventListener(NfcEvents.StateChanged, null);
     };
-    
-    
-    
+
+
+
   }, []);
 
   const checkNfcSupport = async () => {
@@ -75,37 +95,37 @@ function Scanner() {
     }
 
     try {
-        while (scan == true) {
-          // Request NFC technology
-          await NfcManager.requestTechnology(NfcTech.Ndef);
-          const tagDetails = await NfcManager.getTag();
-          await NfcManager.cancelTechnologyRequest();
-          
-          // if tag detected
-          if (tagDetails) {
-            const firstRecord = tagDetails.ndefMessage[0];
-            const byteArray = firstRecord.payload;
-            let messageString = String.fromCharCode(...byteArray);
-            messageString = messageString.slice(3,messageString.length); 
-            const message = JSON.parse(messageString);
-            setTag(message.id)
-            if (verifyItem(message.product_id) == true) {
-              console.log("present")
-              // playAudio(true)
-            }
-            else {
-              console.log("not present")
-            }
-            // else playAudio(false)
-            setTag("");
-          }
+      while (scan == true) {
+        // Request NFC technology
+        await NfcManager.requestTechnology(NfcTech.Ndef);
+        const tagDetails = await NfcManager.getTag();
+        await NfcManager.cancelTechnologyRequest();
 
+        // if tag detected
+        if (tagDetails) {
+          const firstRecord = tagDetails.ndefMessage[0];
+          const byteArray = firstRecord.payload;
+          let messageString = String.fromCharCode(...byteArray);
+          messageString = messageString.slice(3, messageString.length);
+          const message = JSON.parse(messageString);
+          setTag(message.id)
+          if (verifyItem(message.product_id) == true) {
+            console.log("present")
+            playAudio(true)
+          }
+          else {
+            console.log("not present")
+            playAudio(false)
+          }
+          setTag("");
         }
-        
+
+      }
+
     } catch (ex: any) {
       // console.warn('Oops!', ex);
       // Alert.alert('Error reading NFC tag', ex.message);
-      console.log("scan closed, click again to start")
+      console.log(ex)
     }
     finally {
       await NfcManager.cancelTechnologyRequest();
@@ -118,17 +138,17 @@ function Scanner() {
     cart.forEach((item) => {
       console.log(product_id + " " + item.product_id)
       if (item.product_id.toString() == product_id.toString()) {
-        // const encryptedMessage = product_id+item.hash;
+        const encryptedMessage = product_id+item.verification_hash;
         console.log('equal')
-        // const decryptedMessage = decryptMessage(encryptedMessage);
+        const decryptedMessage = decryptMessage(encryptedMessage);
 
-        // if (decryptedMessage.slice(-20) == '00000000000000000000') {
-        //   setBuzzer(false);
-        // }
+        console.log(decryptedMessage)
+
+        if (decryptedMessage.slice(-10) == '0000000000') {
+          present = true;
+        }
 
         // setCart((prevCart) => prevCart.filter(matched => matched.product_id != product_id ));
-
-        present = true
       }
     })
 
@@ -152,7 +172,7 @@ function Scanner() {
       // Create NDEF message using Ndef helper
       const ndefMessage = [
         Ndef.textRecord(JSON.stringify({ "product_id": "13" })) // Convert object to string
-      ];      
+      ];
 
       const bytes = Ndef.encodeMessage(ndefMessage); // Use Ndef to encode the message
 

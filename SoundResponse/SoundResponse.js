@@ -1,21 +1,32 @@
-import TrackPlayer from 'react-native-track-player';
+const Sound = require('react-native-sound');
 
-const playAudio = async (verify) => {
-  // Load the correct audio based on the verify value
-  const soundFile = verify ? require('./correct.mp3') : require('./invalid.mp3');
+// Set the category for audio playback
+Sound.setCategory('Playback');
 
+// Function to play audio once
+const playAudio = (verify) => {
+  // Choose the sound file based on the condition
+  const soundFile = verify ? 'correct.mp3' : 'invalid.mp3';
 
-  console.log(verify ? 'valid' : 'invalid')
-  await TrackPlayer.setupPlayer();
+  // Load the sound file
+  const whoosh = new Sound(soundFile, Sound.MAIN_BUNDLE, (error) => {
+    if (error) {
+      console.log('failed to load the sound', error);
+      return;
+    }
 
-  // Add a track to the queue
-    await TrackPlayer.add({
-        id: 'trackId',
-        url: require('track.mp3'),
-        title: 'Track Title',
-        artist: 'Track Artist',
-        artwork: require('track.png')
-  })
-}
+    // Play the sound
+    whoosh.play((success) => {
+      if (success) {
+        console.log('successfully finished playing');
+      } else {
+        console.log('playback failed due to audio decoding errors');
+      }
+
+      // Release the sound resource after playback finishes
+      whoosh.release();
+    });
+  });
+};
 
 module.exports = {playAudio: playAudio}
