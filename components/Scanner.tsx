@@ -21,7 +21,7 @@ function Scanner() {
   const [nfcEnabled, setNfcEnabled] = useState<boolean>(false);
   const [tag, setTag] = useState<string | undefined>("");
   const [scan, setScan] = useState<boolean>(false);
-  const [cart, setCart] = useState<CartItem[]>([{"product_id": "12", "verification_hash": "34"}]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [client, setClient] = useState<TcpSocket.Socket | null>(null);
 
@@ -32,13 +32,13 @@ function Scanner() {
 
     tcpClient.on('data', (data) => {
       console.log(data.toString())
-      const curr_cart: any[] = JSON.parse(data);
+      const curr_cart: any[] = JSON.parse(data.toString());
       console.log('Received from server: ', curr_cart);
       console.log(typeof curr_cart); // Should be 'object' for an array
 
       // Use functional state update to ensure correct updates
       setCart(curr_cart);
-    });
+    },[]);
 
     // Set the client to state
     setClient(tcpClient);
@@ -118,6 +118,7 @@ function Scanner() {
             playAudio(false)
           }
           setTag("");
+          setCart([])
         }
 
       }
@@ -132,21 +133,28 @@ function Scanner() {
     }
   }
 
-  function verifyItem(product_id: string) {
+   function verifyItem(product_id: string) {
+    console.log("vrify cart : ",cart)
     let present = false;
     console.log(product_id)
-    cart.forEach((item) => {
+    cart.forEach(async (item) => {
       console.log(product_id + " " + item.product_id)
       if (item.product_id.toString() == product_id.toString()) {
-        const encryptedMessage = product_id+item.verification_hash;
+        // const encryptedMessage = product_id+item.verification_hash;
         console.log('equal')
-        const decryptedMessage = decryptMessage(encryptedMessage);
+        // console.log(encryptedMessage)
+        // const decryptedMessage = await decryptMessage(encryptedMessage);
 
-        console.log(decryptedMessage)
+        // if (decryptMessage) {
+        //   console.log("yes")
+        // }
+        // console.log("decrypted message", decryptedMessage)
 
-        if (decryptedMessage.slice(-10) == '0000000000') {
-          present = true;
-        }
+        // if (decryptedMessage.slice(-10) == '0000000000') {
+        //   present = true;
+        // }
+
+        present = true
 
         // setCart((prevCart) => prevCart.filter(matched => matched.product_id != product_id ));
       }
@@ -171,7 +179,7 @@ function Scanner() {
 
       // Create NDEF message using Ndef helper
       const ndefMessage = [
-        Ndef.textRecord(JSON.stringify({ "product_id": "13" })) // Convert object to string
+        Ndef.textRecord(JSON.stringify({ "product_id": "g53z+KWhvsX5ZzYOjWArw78vyAcDFqrqg8O2dtbZqV6e" })) // Convert object to string
       ];
 
       const bytes = Ndef.encodeMessage(ndefMessage); // Use Ndef to encode the message
